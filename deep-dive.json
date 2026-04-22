@@ -1,0 +1,96 @@
+{
+  "name": "ResearchMind - Deep Dive",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "deep-dive",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-160, 0],
+      "id": "4bb5128e-78d2-43f9-9ef5-6ee1c7fb5377",
+      "name": "Webhook",
+      "webhookId": "YOUR_WEBHOOK_ID"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze this research paper in detail:\n\nTitle: {{ $json.title }}\nAuthors: {{ $json.authors }}\nYear: {{ $json.year }}\nCitations: {{ $json.citations }}\nSource: {{ $json.source }}\n\nAbstract: {{ $json.abstract }}\n\nProvide comprehensive, paper-specific insights based on the content above. Do not ask for input. Analyze immediately.",
+        "options": {
+          "systemMessage": "You analyze research papers for PhD students. You ONLY analyze the paper provided. You are SPECIFIC and CONCRETE.\n\nFor THIS paper analyze:\n\n**Limitations:**\n- What are the methodology limitations of this paper?\n- What are the data or sample limitations?\n- What are the scope or generalizability issues?\n\n**Improvements:**\n- How could the methodology be enhanced?\n- How could the data collection be improved?\n- How could the findings be more applicable?\n\n**Future Research:**\n- What gaps does this paper reveal?\n- What extensions of this work are needed?\n- What related areas should be explored?\n\n**Methods to Try:**\n- What alternative methods could complement this study?\n- What techniques could address the limitations?\n\nRULES:\n- Reference specific details from THIS paper\n- Use specific terminology from the abstract\n- Do not use generic academic language\n- Be actionable and specific\n- Write for PhD students in this field"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [288, 0],
+      "id": "e856aa35-a0bd-4fd4-ab0a-b5e51742fb43",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [272, 224],
+      "id": "6b2a9355-002f-49be-923f-b1a914b22270",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "YOUR_GROQ_CREDENTIAL_ID",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $('AI Agent').item.json.output }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [{ "name": "Content-Type", "value": "application/json" }]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [640, 0],
+      "id": "d02df3c9-daef-4a71-8b69-731102b1ee75",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "f921ae59-039a-41ed-8401-502e88ac54d5", "name": "title", "value": "={{ $json.body.title }}", "type": "string" },
+            { "id": "5b9d39b8-d06d-4cca-a9bf-72aecab7fb53", "name": "year", "value": "={{ $json.body.year }}", "type": "string" },
+            { "id": "b3dfae94-47cb-496e-9ece-4ba81a923505", "name": "citations", "value": "={{ $json.body.citations }}", "type": "string" },
+            { "id": "18818d28-bf01-497f-b32e-ed61ced082e4", "name": "source", "value": "={{ $json.body.source }}", "type": "string" },
+            { "id": "bd2ea126-a73f-47f8-b151-57f8a39836e0", "name": "abstract", "value": "={{ $json.body.abstract }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [64, 0],
+      "id": "cb1a4949-dd93-4947-80eb-79a38513d799",
+      "name": "Edit Fields"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Edit Fields", "type": "main", "index": 0 }]] },
+    "Groq Chat Model": { "ai_languageModel": [[{ "node": "AI Agent", "type": "ai_languageModel", "index": 0 }]] },
+    "AI Agent": { "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]] },
+    "Edit Fields": { "main": [[{ "node": "AI Agent", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "tags": []
+}
